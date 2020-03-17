@@ -3,8 +3,10 @@ package diff
 import "bytes"
 
 // NOTE: types are code-generated in diff.pb.go.
-
-//go:generate protoc -I../../../.. -I ../../../../github.com/gogo/protobuf/protobuf -I. --gogo_out=. diff.proto
+// First:
+//   go mod vendor
+//   go install github.com/golang/protobuf/protoc-gen-go
+//go:generate protoc --plugin=protoc-gen-gogo=$GOPATH/bin/protoc-gen-go -I=../vendor -I. --gogo_out=. diff.proto
 
 // Stat computes the number of lines added/changed/deleted in all
 // hunks in this file's diff.
