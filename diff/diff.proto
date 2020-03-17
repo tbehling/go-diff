@@ -77,5 +77,18 @@ message Stat {
 
 	// number of lines deleted
 	int32 Deleted = 3 [(gogoproto.jsontag) = ""];
-}
 
+	message LineInterval {
+		// first line of interval
+		int32 Start = 1 [(gogoproto.jsontag) = ""];
+
+		// last line of interval
+		int32 End = 2 [(gogoproto.jsontag) = ""];
+	}
+
+	// line number intervals ("first-last") added, in "new" file
+	repeated LineInterval AddedLineIntervals = 4 [(gogoproto.jsontag) = ""];
+
+	// line number intervals ("first-last") deleted, in "old" file
+	repeated LineInterval DeletedLineIntervals = 5 [(gogoproto.jsontag) = ""];
+}
