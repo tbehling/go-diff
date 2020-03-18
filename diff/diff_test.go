@@ -635,6 +635,9 @@ func TestFileDiff_Stat(t *testing.T) {
 	for label, test := range tests {
 		fdiff := &FileDiff{Hunks: test.hunks}
 		stat := fdiff.Stat()
+		// Avoid testing the Stat_LineInterval fields
+		stat.AddedLineIntervals = nil
+		stat.DeletedLineIntervals = nil
 		if !reflect.DeepEqual(stat, test.want) {
 			t.Errorf("%s: got diff stat %+v, want %+v", label, stat, test.want)
 			continue
