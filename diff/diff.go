@@ -41,7 +41,7 @@ func (h *Hunk) Stat() Stat {
 
 	for lineNbr, line := range lines {
 		if len(line) == 0 {
-			last = 0
+			last, lastState = 0, 0
 			continue
 		}
 
