@@ -98,6 +98,8 @@ func (h *Hunk) Stat() Stat {
 			}
 		}
 
+		lastFlag = line[0]
+
 		switch line[0] {
 		case '-':
 			if last == '+' {
@@ -120,8 +122,6 @@ func (h *Hunk) Stat() Stat {
 		default:
 			last = 0
 		}
-
-		lastFlag = line[0]
 	}
 
 	addedState.appendInterval(&st.AddedLineIntervals)
