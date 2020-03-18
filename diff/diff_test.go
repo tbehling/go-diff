@@ -596,6 +596,7 @@ func TestFileDiff_Stat(t *testing.T) {
 			},
 			want: Stat{
 				AddedLineIntervals:   []*Stat_LineInterval{},
+				DeletedLineIntervals: []*Stat_LineInterval{},
 			},
 		},
 		"added/deleted": {
@@ -610,6 +611,8 @@ func TestFileDiff_Stat(t *testing.T) {
 			want: Stat{Added: 1, Deleted: 1,
 				AddedLineIntervals: []*Stat_LineInterval{
 					&Stat_LineInterval{Start: 1, End: 1}},
+				DeletedLineIntervals: []*Stat_LineInterval{
+					&Stat_LineInterval{Start: 2, End: 2}},
 			},
 		},
 		"changed": {
@@ -624,6 +627,8 @@ func TestFileDiff_Stat(t *testing.T) {
 			},
 			want: Stat{Added: 1, Changed: 1, Deleted: 1,
 				AddedLineIntervals: []*Stat_LineInterval{
+					&Stat_LineInterval{Start: 1, End: 2}},
+				DeletedLineIntervals: []*Stat_LineInterval{
 					&Stat_LineInterval{Start: 1, End: 2}},
 			},
 		},
@@ -640,7 +645,11 @@ func TestFileDiff_Stat(t *testing.T) {
 			want: Stat{Added: 0, Changed: 2, Deleted: 0,
 				AddedLineIntervals: []*Stat_LineInterval{
 					&Stat_LineInterval{Start: 1, End: 1},
-					&Stat_LineInterval{Start: 3, End: 3},
+					&Stat_LineInterval{Start: 2, End: 2},
+				},
+				DeletedLineIntervals: []*Stat_LineInterval{
+					&Stat_LineInterval{Start: 1, End: 1},
+					&Stat_LineInterval{Start: 2, End: 2},
 				},
 			},
 		},

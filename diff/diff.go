@@ -13,6 +13,7 @@ import "bytes"
 func (d *FileDiff) Stat() Stat {
 	total := Stat{
 		AddedLineIntervals:   make([]*Stat_LineInterval, 0),
+		DeletedLineIntervals: make([]*Stat_LineInterval, 0),
 	}
 	for _, h := range d.Hunks {
 		total.add(h.Stat())
@@ -28,11 +29,13 @@ func (h *Hunk) Stat() Stat {
 
 	st := Stat{
 		AddedLineIntervals:   make([]*Stat_LineInterval, 0),
+		DeletedLineIntervals: make([]*Stat_LineInterval, 0),
 	}
 
 	addedInterval := &Stat_LineInterval{}
+	deletedInterval := &Stat_LineInterval{}
 	var lastState byte
-	pendingInterval := false
+	pendingIntervalAdd, pendingIntervalDel := false, false
 
 	for lineNbr, line := range lines {
 		if len(line) == 0 {
@@ -40,7 +43,37 @@ func (h *Hunk) Stat() Stat {
 			continue
 		}
 
-		lineInNewFile := int32(h.NewStartLine) + int32(lineNbr) - st.Deleted
+		lineInNewFile := int32(h.NewStartLine) + int32(lineNbr) - st.Deleted - st.Changed
+		lineInOrigFile := int32(h.OrigStartLine) + int32(lineNbr) - st.Added - st.Changed
+
+		if line[0] == '+' {
+			if lastState != '+' {
+				addedInterval.Start = lineInNewFile
+				pendingIntervalAdd = true
+			}
+			addedInterval.End = lineInNewFile
+		} else {
+			if lastState == '+' {
+				st.AddedLineIntervals = append(st.AddedLineIntervals, addedInterval)
+				pendingIntervalAdd = false
+				addedInterval = &Stat_LineInterval{}
+			}
+		}
+
+		if line[0] == '-' {
+			if lastState != '-' {
+				deletedInterval.Start = lineInOrigFile
+				pendingIntervalDel = true
+			}
+			deletedInterval.End = lineInOrigFile
+		} else {
+			if lastState == '-' {
+				st.DeletedLineIntervals = append(st.DeletedLineIntervals, deletedInterval)
+				pendingIntervalDel = false
+				deletedInterval = &Stat_LineInterval{}
+			}
+		}
+
 		switch line[0] {
 		case '-':
 			if last == '+' {
@@ -64,24 +97,14 @@ func (h *Hunk) Stat() Stat {
 			last = 0
 		}
 
-		if line[0] == '+' {
-			if lastState != '+' {
-				addedInterval.Start = lineInNewFile
-				pendingInterval = true
-			}
-			addedInterval.End = lineInNewFile
-		} else {
-			if lastState == '+' {
-				st.AddedLineIntervals = append(st.AddedLineIntervals, addedInterval)
-				pendingInterval = false
-				addedInterval = &Stat_LineInterval{}
-			}
-		}
 		lastState = line[0]
 	}
 
-	if pendingInterval {
+	if pendingIntervalAdd {
 		st.AddedLineIntervals = append(st.AddedLineIntervals, addedInterval)
+	}
+	if pendingIntervalDel {
+		st.DeletedLineIntervals = append(st.DeletedLineIntervals, deletedInterval)
 	}
 
 	return st
@@ -109,4 +132,5 @@ func (s *Stat) add(o Stat) {
 	s.Deleted += o.Deleted
 
 	s.AddedLineIntervals = append(s.AddedLineIntervals, o.AddedLineIntervals...)
+	s.DeletedLineIntervals = append(s.DeletedLineIntervals, o.DeletedLineIntervals...)
 }
