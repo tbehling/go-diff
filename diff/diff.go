@@ -40,11 +40,10 @@ func newStatIntervalState() *statIntervalState {
 	}
 }
 
-func (s *statIntervalState) setStart(i int32) {
-	s.current = &Stat_LineInterval{Start: i}
-}
-
-func (s *statIntervalState) setEnd(i int32) {
+func (s *statIntervalState) updateLine(i int32) {
+	if !s.pending() {
+		s.current = &Stat_LineInterval{Start: i}
+	}
 	s.current.End = i
 }
 
@@ -75,14 +74,9 @@ func (h *Hunk) Stat() Stat {
 			continue
 		}
 
-		lineInNewFile := int32(h.NewStartLine) + int32(lineNbr) - st.Deleted - st.Changed
-		lineInOrigFile := int32(h.OrigStartLine) + int32(lineNbr) - st.Added - st.Changed
-
 		if line[0] == '+' {
-			if lastFlag != '+' {
-				addedState.setStart(lineInNewFile)
-			}
-			addedState.setEnd(lineInNewFile)
+			lineInNewFile := int32(h.NewStartLine) + int32(lineNbr) - st.Deleted - st.Changed
+			addedState.updateLine(lineInNewFile)
 		} else {
 			if lastFlag == '+' {
 				st.AddedLineIntervals = append(st.AddedLineIntervals, addedState.popInterval())
@@ -90,10 +84,8 @@ func (h *Hunk) Stat() Stat {
 		}
 
 		if line[0] == '-' {
-			if lastFlag != '-' {
-				deletedState.setStart(lineInOrigFile)
-			}
-			deletedState.setEnd(lineInOrigFile)
+			lineInOrigFile := int32(h.OrigStartLine) + int32(lineNbr) - st.Added - st.Changed
+			deletedState.updateLine(lineInOrigFile)
 		} else {
 			if lastFlag == '-' {
 				st.DeletedLineIntervals = append(st.DeletedLineIntervals, deletedState.popInterval())
