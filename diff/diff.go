@@ -32,28 +32,29 @@ func (d *FileDiff) Stat() Stat {
 
 type statIntervalState struct {
 	current *Stat_LineInterval
-	pending bool
 }
 
 func newStatIntervalState() *statIntervalState {
 	return &statIntervalState{
-		current: &Stat_LineInterval{},
+		current: nil,
 	}
 }
 
 func (s *statIntervalState) setStart(i int32) {
-	s.pending = true
-	s.current.Start = i
+	s.current = &Stat_LineInterval{Start: i}
 }
 
 func (s *statIntervalState) setEnd(i int32) {
 	s.current.End = i
 }
 
+func (s *statIntervalState) pending() bool {
+	return s.current != nil
+}
+
 func (s *statIntervalState) popInterval() (interval *Stat_LineInterval) {
 	interval = s.current
-	s.pending = false
-	s.current = &Stat_LineInterval{}
+	s.current = nil
 	return
 }
 
@@ -125,10 +126,10 @@ func (h *Hunk) Stat() Stat {
 		lastFlag = line[0]
 	}
 
-	if addedState.pending {
+	if addedState.pending() {
 		st.AddedLineIntervals = append(st.AddedLineIntervals, addedState.popInterval())
 	}
-	if deletedState.pending {
+	if deletedState.pending() {
 		st.DeletedLineIntervals = append(st.DeletedLineIntervals, deletedState.popInterval())
 	}
 
