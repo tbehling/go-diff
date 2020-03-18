@@ -594,10 +594,7 @@ func TestFileDiff_Stat(t *testing.T) {
  b
 `)},
 			},
-			want: Stat{
-				AddedLineIntervals:   []*Stat_LineInterval{},
-				DeletedLineIntervals: []*Stat_LineInterval{},
-			},
+			want: Stat{},
 		},
 		"added/deleted": {
 			hunks: []*Hunk{
@@ -608,12 +605,7 @@ func TestFileDiff_Stat(t *testing.T) {
  d
 `)},
 			},
-			want: Stat{Added: 1, Deleted: 1,
-				AddedLineIntervals: []*Stat_LineInterval{
-					&Stat_LineInterval{Start: 1, End: 1}},
-				DeletedLineIntervals: []*Stat_LineInterval{
-					&Stat_LineInterval{Start: 2, End: 2}},
-			},
+			want: Stat{Added: 1, Deleted: 1},
 		},
 		"changed": {
 			hunks: []*Hunk{
@@ -625,12 +617,7 @@ func TestFileDiff_Stat(t *testing.T) {
  e
 `)},
 			},
-			want: Stat{Added: 1, Changed: 1, Deleted: 1,
-				AddedLineIntervals: []*Stat_LineInterval{
-					&Stat_LineInterval{Start: 1, End: 2}},
-				DeletedLineIntervals: []*Stat_LineInterval{
-					&Stat_LineInterval{Start: 1, End: 2}},
-			},
+			want: Stat{Added: 1, Changed: 1, Deleted: 1},
 		},
 		"many changes": {
 			hunks: []*Hunk{
@@ -642,23 +629,14 @@ func TestFileDiff_Stat(t *testing.T) {
  e
 `)},
 			},
-			want: Stat{Added: 0, Changed: 2, Deleted: 0,
-				AddedLineIntervals: []*Stat_LineInterval{
-					&Stat_LineInterval{Start: 1, End: 1},
-					&Stat_LineInterval{Start: 2, End: 2},
-				},
-				DeletedLineIntervals: []*Stat_LineInterval{
-					&Stat_LineInterval{Start: 1, End: 1},
-					&Stat_LineInterval{Start: 2, End: 2},
-				},
-			},
+			want: Stat{Added: 0, Changed: 2, Deleted: 0},
 		},
 	}
 	for label, test := range tests {
 		fdiff := &FileDiff{Hunks: test.hunks}
 		stat := fdiff.Stat()
 		if !reflect.DeepEqual(stat, test.want) {
-			t.Errorf("%s: got diff stat\n%+v, want\n%+v", label, stat, test.want)
+			t.Errorf("%s: got diff stat %+v, want %+v", label, stat, test.want)
 			continue
 		}
 	}
