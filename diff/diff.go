@@ -11,7 +11,9 @@ import "bytes"
 // Stat computes the number of lines added/changed/deleted in all
 // hunks in this file's diff.
 func (d *FileDiff) Stat() Stat {
-	total := Stat{}
+	total := Stat{
+		AddedLineIntervals:   make([]*Stat_LineInterval, 0),
+	}
 	for _, h := range d.Hunks {
 		total.add(h.Stat())
 	}
@@ -23,12 +25,22 @@ func (d *FileDiff) Stat() Stat {
 func (h *Hunk) Stat() Stat {
 	lines := bytes.Split(h.Body, []byte{'\n'})
 	var last byte
-	st := Stat{}
-	for _, line := range lines {
+
+	st := Stat{
+		AddedLineIntervals:   make([]*Stat_LineInterval, 0),
+	}
+
+	addedInterval := &Stat_LineInterval{}
+	var lastState byte
+	pendingInterval := false
+
+	for lineNbr, line := range lines {
 		if len(line) == 0 {
 			last = 0
 			continue
 		}
+
+		lineInNewFile := int32(h.NewStartLine) + int32(lineNbr) - st.Deleted
 		switch line[0] {
 		case '-':
 			if last == '+' {
@@ -51,7 +63,27 @@ func (h *Hunk) Stat() Stat {
 		default:
 			last = 0
 		}
+
+		if line[0] == '+' {
+			if lastState != '+' {
+				addedInterval.Start = lineInNewFile
+				pendingInterval = true
+			}
+			addedInterval.End = lineInNewFile
+		} else {
+			if lastState == '+' {
+				st.AddedLineIntervals = append(st.AddedLineIntervals, addedInterval)
+				pendingInterval = false
+				addedInterval = &Stat_LineInterval{}
+			}
+		}
+		lastState = line[0]
 	}
+
+	if pendingInterval {
+		st.AddedLineIntervals = append(st.AddedLineIntervals, addedInterval)
+	}
+
 	return st
 }
 
@@ -75,4 +107,6 @@ func (s *Stat) add(o Stat) {
 	s.Added += o.Added
 	s.Changed += o.Changed
 	s.Deleted += o.Deleted
+
+	s.AddedLineIntervals = append(s.AddedLineIntervals, o.AddedLineIntervals...)
 }
