@@ -8,13 +8,18 @@ import "bytes"
 //   go install github.com/golang/protobuf/protoc-gen-go
 //go:generate protoc --plugin=protoc-gen-gogo=$GOPATH/bin/protoc-gen-go -I=../vendor -I. --gogo_out=. diff.proto
 
-// Stat computes the number of lines added/changed/deleted in all
-// hunks in this file's diff.
-func (d *FileDiff) Stat() Stat {
-	total := Stat{
+// NewStat creates a blank Stat with internal structures defined
+func NewStat() Stat {
+	return Stat{
 		AddedLineIntervals:   make([]*Stat_LineInterval, 0),
 		DeletedLineIntervals: make([]*Stat_LineInterval, 0),
 	}
+}
+
+// Stat computes the number of lines added/changed/deleted in all
+// hunks in this file's diff.
+func (d *FileDiff) Stat() Stat {
+	total := NewStat()
 	for _, h := range d.Hunks {
 		total.add(h.Stat())
 	}
@@ -27,10 +32,7 @@ func (h *Hunk) Stat() Stat {
 	lines := bytes.Split(h.Body, []byte{'\n'})
 	var last byte
 
-	st := Stat{
-		AddedLineIntervals:   make([]*Stat_LineInterval, 0),
-		DeletedLineIntervals: make([]*Stat_LineInterval, 0),
-	}
+	st := NewStat()
 
 	addedInterval := &Stat_LineInterval{}
 	deletedInterval := &Stat_LineInterval{}
