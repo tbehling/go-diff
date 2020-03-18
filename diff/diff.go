@@ -1,6 +1,10 @@
 package diff
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+	"strings"
+)
 
 // NOTE: types are code-generated in diff.pb.go.
 // First:
@@ -110,6 +114,34 @@ func (h *Hunk) Stat() Stat {
 	}
 
 	return st
+}
+
+// FormatAddedLineIntervals renders the added intevals as a list of ranges (start-end) or single value
+func (m *Stat) FormatAddedLineIntervals() string {
+	return intervalsString(m.AddedLineIntervals)
+}
+
+// FormatDeletedLineIntervals renders the deleted intevals as a list of ranges (start-end) or single value
+func (m *Stat) FormatDeletedLineIntervals() string {
+	return intervalsString(m.DeletedLineIntervals)
+}
+
+func intervalsString(sli []*Stat_LineInterval) string {
+	var b strings.Builder
+	// estimate the needed buffer size, to avoid excessive reallocations
+	b.Grow(len(sli) * 10)
+	for i, pair := range sli {
+		if pair.Start == pair.End {
+			fmt.Fprintf(&b, "%d", pair.Start)
+		} else {
+			fmt.Fprintf(&b, "%d-%d", pair.Start, pair.End)
+		}
+
+		if i != len(sli)-1 {
+			fmt.Fprint(&b, ", ")
+		}
+	}
+	return b.String()
 }
 
 var (

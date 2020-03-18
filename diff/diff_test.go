@@ -649,9 +649,11 @@ func TestFileDiff_Stat(t *testing.T) {
 
 func TestFileDiff_Stat_LineInterval(t *testing.T) {
 	tests := []struct {
-		filename    string
-		wantAdded   []*Stat_LineInterval
-		wantDeleted []*Stat_LineInterval
+		filename             string
+		wantAdded            []*Stat_LineInterval
+		wantDeleted          []*Stat_LineInterval
+		wantAddedFormatted   string
+		wantDeletedFormatted string
 	}{
 		{filename: "sample_file.diff",
 			wantAdded: []*Stat_LineInterval{
@@ -663,6 +665,8 @@ func TestFileDiff_Stat_LineInterval(t *testing.T) {
 				&Stat_LineInterval{Start: 8, End: 14},
 				&Stat_LineInterval{Start: 17, End: 17},
 			},
+			wantAddedFormatted:   "1-6, 14, 17",
+			wantDeletedFormatted: "8-14, 17",
 		},
 		{filename: "sample_file_extended_empty_new.diff",
 			wantAdded:   []*Stat_LineInterval{},
@@ -680,6 +684,11 @@ func TestFileDiff_Stat_LineInterval(t *testing.T) {
 			stat := diff.Stat()
 			assert.Equal(t, test.wantAdded, stat.AddedLineIntervals, "AddedLineIntervals")
 			assert.Equal(t, test.wantDeleted, stat.DeletedLineIntervals, "DeletedLineIntervals")
+
+			t.Run("format", func(t *testing.T) {
+				assert.Equal(t, test.wantAddedFormatted, stat.FormatAddedLineIntervals(), "FormatAddedLineIntervals")
+				assert.Equal(t, test.wantDeletedFormatted, stat.FormatDeletedLineIntervals(), "FormatDeletedLineIntervals")
+			})
 		})
 	}
 }
