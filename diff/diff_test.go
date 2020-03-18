@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/shurcooL/go-goon"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -643,4 +645,83 @@ func TestFileDiff_Stat(t *testing.T) {
 			continue
 		}
 	}
+}
+
+func TestFileDiff_Stat_LineInterval(t *testing.T) {
+	tests := []struct {
+		filename    string
+		wantAdded   []*Stat_LineInterval
+		wantDeleted []*Stat_LineInterval
+	}{
+		{filename: "sample_file.diff",
+			wantAdded: []*Stat_LineInterval{
+				&Stat_LineInterval{Start: 1, End: 6},
+				&Stat_LineInterval{Start: 14, End: 14},
+				&Stat_LineInterval{Start: 17, End: 17},
+			},
+			wantDeleted: []*Stat_LineInterval{
+				&Stat_LineInterval{Start: 8, End: 14},
+				&Stat_LineInterval{Start: 17, End: 17},
+			},
+		},
+		{filename: "sample_file_extended_empty_new.diff",
+			wantAdded:   []*Stat_LineInterval{},
+			wantDeleted: []*Stat_LineInterval{},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.filename, func(t *testing.T) {
+			diffData, err := ioutil.ReadFile(filepath.Join("testdata", test.filename))
+			require.NoError(t, err, "ReadFile")
+
+			diff, err := ParseFileDiff(diffData)
+			require.NoError(t, err, "ParseFileDiff")
+
+			stat := diff.Stat()
+			assert.Equal(t, test.wantAdded, stat.AddedLineIntervals, "AddedLineIntervals")
+			assert.Equal(t, test.wantDeleted, stat.DeletedLineIntervals, "DeletedLineIntervals")
+		})
+	}
+}
+
+func TestMultiFileDiff_Stat_LineInterval(t *testing.T) {
+	diffData, err := ioutil.ReadFile(filepath.Join("testdata", "sample_multi_file.diff"))
+	require.NoError(t, err, "ReadFile")
+
+	diffs, err := ParseMultiFileDiff(diffData)
+	require.NoError(t, err, "ParseMultiFileDiff")
+
+	t.Run("file1", func(t *testing.T) {
+		wantAdded := []*Stat_LineInterval{
+			&Stat_LineInterval{Start: 1, End: 6},
+			&Stat_LineInterval{Start: 14, End: 14},
+			&Stat_LineInterval{Start: 17, End: 17},
+		}
+		wantDeleted := []*Stat_LineInterval{
+			&Stat_LineInterval{Start: 8, End: 14},
+			&Stat_LineInterval{Start: 17, End: 17},
+		}
+
+		stat := diffs[0].Stat()
+		assert.Equal(t, "newname1", diffs[0].GetNewName())
+		assert.Equal(t, wantAdded, stat.AddedLineIntervals, "AddedLineIntervals")
+		assert.Equal(t, wantDeleted, stat.DeletedLineIntervals, "DeletedLineIntervals")
+	})
+
+	t.Run("file2", func(t *testing.T) {
+		wantAdded := []*Stat_LineInterval{
+			&Stat_LineInterval{Start: 1, End: 6},
+			&Stat_LineInterval{Start: 14, End: 14},
+			&Stat_LineInterval{Start: 17, End: 17},
+		}
+		wantDeleted := []*Stat_LineInterval{
+			&Stat_LineInterval{Start: 8, End: 14},
+			&Stat_LineInterval{Start: 17, End: 17},
+		}
+
+		stat := diffs[1].Stat()
+		assert.Equal(t, "newname2", diffs[1].GetNewName())
+		assert.Equal(t, wantAdded, stat.AddedLineIntervals, "AddedLineIntervals")
+		assert.Equal(t, wantDeleted, stat.DeletedLineIntervals, "DeletedLineIntervals")
+	})
 }
