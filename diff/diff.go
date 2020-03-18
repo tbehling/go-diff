@@ -57,6 +57,12 @@ func (s *statIntervalState) popInterval() (interval *Stat_LineInterval) {
 	return
 }
 
+func (s *statIntervalState) appendInterval(sli *[]*Stat_LineInterval) {
+	if s.pending() {
+		*sli = append(*sli, s.popInterval())
+	}
+}
+
 // Stat computes the number of lines added/changed/deleted in this
 // hunk.
 func (h *Hunk) Stat() Stat {
@@ -79,7 +85,7 @@ func (h *Hunk) Stat() Stat {
 			addedState.updateLine(lineInNewFile)
 		} else {
 			if lastFlag == '+' {
-				st.AddedLineIntervals = append(st.AddedLineIntervals, addedState.popInterval())
+				addedState.appendInterval(&st.AddedLineIntervals)
 			}
 		}
 
@@ -88,7 +94,7 @@ func (h *Hunk) Stat() Stat {
 			deletedState.updateLine(lineInOrigFile)
 		} else {
 			if lastFlag == '-' {
-				st.DeletedLineIntervals = append(st.DeletedLineIntervals, deletedState.popInterval())
+				deletedState.appendInterval(&st.DeletedLineIntervals)
 			}
 		}
 
@@ -118,12 +124,8 @@ func (h *Hunk) Stat() Stat {
 		lastFlag = line[0]
 	}
 
-	if addedState.pending() {
-		st.AddedLineIntervals = append(st.AddedLineIntervals, addedState.popInterval())
-	}
-	if deletedState.pending() {
-		st.DeletedLineIntervals = append(st.DeletedLineIntervals, deletedState.popInterval())
-	}
+	addedState.appendInterval(&st.AddedLineIntervals)
+	deletedState.appendInterval(&st.DeletedLineIntervals)
 
 	return st
 }
